@@ -1,6 +1,6 @@
 # OBS:
 
-This repository is an implementation from 'https://codeberg.org/selan/Projeto-AMazing'
+This repository is an implementation of 'https://codeberg.org/selan/Projeto-AMazing'
 
 # Presentation
 
