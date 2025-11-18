@@ -1,3 +1,7 @@
+# OBS:
+
+This repository is an implementation from 'https://codeberg.org/selan/Projeto-AMazing'
+
 # Presentation
 
 This is a simple programming project designed to help you get started with maze solving and prepare you to tackle the Snaze programming project.
