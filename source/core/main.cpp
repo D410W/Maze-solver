@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <stack>
 
 #include "maze.h"
 
@@ -19,10 +20,9 @@ std::ostream& operator<<( std::ostream& os, const Position & p )
     return os;
 }
 
-
 /*!
  * Acha um caminho da entrada até a saída, marcando as células que compõem
- * a solução no objeto maze.
+ * a solução no objeto maze. Utiliza recursão.
  *
  * @param m O labirinto que queremos solucionar.
  * @param start O ponto (coordenada) de partida do caminho.
@@ -31,7 +31,26 @@ std::ostream& operator<<( std::ostream& os, const Position & p )
  */
 bool solve_maze( Maze& m, const Position& start, const Position& end )
 {
-    // TODO
+    
+    Position maze_size = m.maze_size();
+                    
+    m.mark_cell(start);
+    
+    if (m.is_exit(start)) return true;
+
+    for (direction_t dir = UP; int(dir) < int(AMOUNT); dir = direction_t(dir + 1)) {
+        Position next_p = m.walk_to(start, dir);
+        
+        if (next_p.row < 0 or next_p.col < 0
+         or next_p.row >= maze_size.row or next_p.col >= maze_size.col) continue;
+     
+        if (m.is_marked(next_p)) continue;
+        if (m.is_blocked(next_p)) continue;
+                
+        if (solve_maze(m, next_p, end)) return true;
+    }
+    
+    m.unmark_cell(start);
 
     return false;
 }
@@ -42,10 +61,39 @@ bool solve_maze( Maze& m, const Position& start, const Position& end )
  * @param matrix A bi-dimensional matrix that stores the input data as integers.
  * @return A status code indicating the reading was ok, or the error code, otherwise.
  */
-int read_file( std::string file_name, vector<vector<int>> &matrix ){
-    // TODO:
-    // The input file strem.
+int read_file( std::string file_name, vector<vector<Maze::cell_type>> &matrix ){
     std::ifstream ifs { file_name }; // Creating and Opening the stream.
+    
+    if (!ifs) return ERR_FAILED_OPENING_INPUT_FILE;
+        
+    vector<Maze::cell_type> line;
+    
+    for (char c{}; !ifs.eof(); c = ifs.get()) {
+        if (c == '\n') {
+            matrix.push_back(line);
+            line.clear();
+        } else {
+            switch (c) {
+            case '1':
+                line.push_back(Maze::cell_type::WALL);
+                break;
+            case '0':
+                line.push_back(Maze::cell_type::FREE);
+                break;
+            case 'm':
+                line.push_back(Maze::cell_type::ENTRY);
+                break;
+            case 'e':
+                line.push_back(Maze::cell_type::EXIT);
+                break;
+            case ' ':
+                line.push_back(Maze::cell_type::FREE);
+                break;
+            case '.':
+                line.push_back(Maze::cell_type::INV_WALL);
+            }
+        }
+    }
 
     return READ_OK;
 }
@@ -58,7 +106,7 @@ int main( int argc, char *argv[] ){
     }
 
     // Recebe uma matriz de inteiros representando um labirinto.
-    vector<vector<int>> input_matrix;
+    vector<vector<Maze::cell_type>> input_matrix;
     auto result = read_file( argv[1], input_matrix );
     if ( result == ERR_FAILED_OPENING_INPUT_FILE ) {
         std::cerr << "--> Fail while attempting to open the input maze file [" << argv[1] << "]!\n";

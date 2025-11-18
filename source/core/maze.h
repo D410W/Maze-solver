@@ -21,7 +21,7 @@ inline bool operator==(const Position &p1, const Position &p2) {
 }
 
 /// Possible directions from a cell.
-enum direction_t : std::uint8_t { UP, DOWN, LEFT, RIGHT };
+enum direction_t : std::uint8_t { UP = 0, DOWN, LEFT, RIGHT, AMOUNT };
 
 /*!
  * Represents a (prefect) maze.
@@ -38,11 +38,6 @@ enum direction_t : std::uint8_t { UP, DOWN, LEFT, RIGHT };
  */
 class Maze {
 
-private:
-  vector<vector<int>> m_maze; //!< The maze stored a 2D matrix.
-  Position m_entry;           //!< Location of the entry cell.
-  Position m_exit;            //!< Location of the exit cell.
-
 public:
   /// Types of cell inside the maze.
   enum cell_type : std::uint8_t {
@@ -51,12 +46,19 @@ public:
     INV_WALL, //!< An invisible wall, to support irregular shape mazes.
     ENTRY,    //!< A cell marking the maze's entry point.
     EXIT,     //!< A cell marking the maze's exit point.
-    PATH //!< A cell that has been marked as part of the path that leads from
-         //!< the maze's entry point to the maze's exit point.
+    PATH, //!< A cell that has been marked as part of the path that leads from
+          //!< the maze's entry point to the maze's exit point.
+    CHECKING //!< Is checking if this cell is the exit path.
   };
 
+private:
+  vector<vector<cell_type>> m_maze; //!< The maze stored a 2D matrix.
+  Position m_entry;           //!< Location of the entry cell.
+  Position m_exit;            //!< Location of the exit cell.
+
+public:
   /// Basic constructor. Receives a matrix corresponding to the maze.
-  Maze(const vector<vector<int>> &);
+  Maze(const vector<vector<Maze::cell_type>> &);
 
   /// Return the location (coordinate) of the maze's entry cell.
   [[nodiscard]] Position entry() const { return m_entry; }
@@ -64,43 +66,45 @@ public:
   /// Return the location (coordinate) of the maze's exit cell.
   [[nodiscard]] Position exit() const { return m_exit; }
 
-  /// Return `true` if the neighbor cell towards the requested direction is a
-  /// wall; returns `false` otherwise.
+  /// Returns the limits of the maze. Used to prevent segmentation fault in the maze matrix.
+  Position maze_size() const { return Position(m_maze[0].size(), m_maze.size()); }
+  
+  /// Return `true` if the cell is a wall or an
+  /// invisible wall; returns `false` otherwise.
   /*!
-   * @param pos The position we are coming from.
-   * @param dir The direction we want to go to.
-   * @return `true` if the cell towards the requested direction is a wall,
+   * @param pos The position we are at.
+   * @return `true` if the cell is a wall,
    * `false` otherwise.
    */
-  bool is_blocked(const Position &pos, const direction_t &dir) const;
+  bool is_blocked(const Position &pos) const;
 
   /// Marks a cell as part of the path that leads to the exit (solution).
   inline void mark_cell(const Position &pos) {
     // We only mark the cell if this is a free cell.
     // It does not change the entry, which is also part of the path.
-    if (m_maze[pos.row][pos.col] == cell_type::FREE)
-      m_maze[pos.row][pos.col] = cell_type::PATH;
+    if (m_maze[pos.col][pos.row] == cell_type::FREE)
+      m_maze[pos.col][pos.row] = cell_type::PATH;
   }
 
   /// UNmarks a cell as part of the path that leads to the exit (solution).
   inline void unmark_cell(const Position &pos) {
     // We only UNmark the cell if this is a PATH cell.
     // It does not change the entry, which is also part of the path.
-    if (m_maze[pos.row][pos.col] == cell_type::PATH)
-      m_maze[pos.row][pos.col] = cell_type::FREE;
+    if (m_maze[pos.col][pos.row] == cell_type::PATH)
+      m_maze[pos.col][pos.row] = cell_type::FREE;
   }
 
   /// Checks whether a cell is marked as part of the path that leads to the exit
   /// (solution).
   inline bool is_marked(const Position &pos) const {
-    return (m_maze[pos.row][pos.col] == cell_type::PATH);
+    return (m_maze[pos.col][pos.row] == cell_type::PATH);
   }
 
   /// Returns the position of the neighbor cell based on the provided direction.
-  Position walk_to(const Position &, const direction_t &) const;
+  Position walk_to(Position, const direction_t &) const;
 
-  /// Checks whether a cell is outside the maze or not.
-  bool is_outside(const Position &) const;
+  /// Checks whether a cell is the exit of the maze.
+  bool is_exit(const Position &) const;
 
   /// Prints a maze representation on the standard output.
   void print(void) const;
