@@ -1,4 +1,4 @@
-# OBS:
+# OBS.:
 
 This repository is an implementation of 'https://codeberg.org/selan/Projeto-AMazing'
 
